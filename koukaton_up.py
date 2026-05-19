@@ -15,13 +15,22 @@ BLUE = (100, 150, 255)
 WHITE = (255, 255, 255)
 GOLD = (255, 215, 0)
 
-# ギミック床の色定義
+# ギミック床の色定義を復活
 COLOR_NORMAL = (120, 120, 120)       # 緑（通常）
 COLOR_FAKE = (180, 0, 180)           # 紫（すり抜ける）
 COLOR_ICE = (100, 200, 255)          # 水色（滑る）
 COLOR_TRAMPOLINE = (255, 140, 0)     # オレンジ（大ジャンプ）
 COLOR_TRAP = (255, 50, 50)           # 赤（最初に戻る）
 COLOR_RED_UI = (255, 100, 100)       # UI用赤
+
+# 種類から色を取得する辞書
+COLOR_MAP = {
+    "normal": COLOR_NORMAL,
+    "fake": COLOR_FAKE,
+    "ice": COLOR_ICE,
+    "trampoline": COLOR_TRAMPOLINE,
+    "trap": COLOR_TRAP
+}
 
 # ==========================================
 # 1. データ構造（クラス）の定義
@@ -43,8 +52,8 @@ class Player:
         self._direction = 1
         
         self._is_clear = False
-        self._on_ice = False      # 氷の上にいるかどうかのフラグ
-        self._is_reset = False    # トラップで初期位置に戻されたかどうかのフラグ
+        self._on_ice = False      
+        self._is_reset = False    
 
     # --- ゲッター ---
     def get_image(self): return self._image
@@ -73,14 +82,12 @@ class Player:
 
 
 class Platform:
-    # ギミック判定用に plat_type（床の種類）を追加
     def __init__(self, x, y, w, h, color, plat_type="normal"):
         self._image = pygame.Surface((w, h))
         self._image.fill(color)
         self._rect = self._image.get_rect(topleft=(x, y))
         self._type = plat_type
 
-    # ゲッター
     def get_image(self): return self._image
     def get_rect(self): return self._rect
     def get_type(self): return self._type
@@ -91,15 +98,11 @@ class Platform:
 # ==========================================
 
 def update_player(player, keys, platforms, goal_block):
-    """プレイヤーの物理挙動と状態を更新する関数"""
-    
     if not player.get_is_clear():
-        # 1. 地面にいる時の処理
         if player.get_on_ground():
             
-            # 氷の上の場合はツルツル滑らせる（慣性を残す）、通常はピタッと止まる
             if player.get_on_ice():
-                player.set_vel_x(player.get_vel_x() * 0.96) # 摩擦で少しずつ減速
+                player.set_vel_x(player.get_vel_x() * 0.96) 
             else:
                 player.set_vel_x(0)
             
@@ -126,13 +129,11 @@ def update_player(player, keys, platforms, goal_block):
                     player.set_on_ground(False)
                     player.set_on_ice(False)
     
-    # 2. 重力の適用
     if not player.get_on_ground():
         player.set_vel_y(player.get_vel_y() + GRAVITY)
 
     rect = player.get_rect()
 
-    # 座標の更新 (X軸) と壁の跳ね返り
     rect.x += player.get_vel_x()
     if rect.left < 0:
         rect.left = 0
@@ -143,10 +144,8 @@ def update_player(player, keys, platforms, goal_block):
         player.set_vel_x(player.get_vel_x() * -0.5)
         player.set_direction(-1)
 
-    # 座標の更新 (Y軸)
     rect.y += int(player.get_vel_y())
 
-    # 3. ゴール（天井）との当たり判定
     goal_rect = goal_block.get_rect()
     if rect.colliderect(goal_rect):
         if player.get_vel_y() < 0:
@@ -154,13 +153,11 @@ def update_player(player, keys, platforms, goal_block):
             player.set_vel_y(0)
             player.set_is_clear(True)
 
-    # 4. 足場との当たり判定
     player.set_on_ground(False)
     player.set_on_ice(False)
 
     if player.get_vel_y() > 0:
         for plat in platforms:
-            # ギミック：フェイク床の場合は当たり判定を無視してすり抜ける
             if plat.get_type() == "fake":
                 continue
                 
@@ -168,27 +165,23 @@ def update_player(player, keys, platforms, goal_block):
             if rect.colliderect(plat_rect):
                 if rect.bottom <= plat_rect.top + player.get_vel_y() + 1:
                     
-                    # ギミック：トランポリン床
                     if plat.get_type() == "trampoline":
                         rect.bottom = plat_rect.top
-                        player.set_vel_y(-25) # 大ジャンプ
+                        player.set_vel_y(-25) 
                         player.set_on_ground(False)
                         break
                     
-                    # ギミック：スタートに戻る罠床
                     if plat.get_type() == "trap":
-                        rect.center = (WIDTH // 2, HEIGHT - 100) # 初期座標へ転送
+                        rect.center = (WIDTH // 2, HEIGHT - 100) 
                         player.set_vel_y(0)
                         player.set_vel_x(0)
-                        player.set_is_reset(True) # カメラリセット用のフラグを立てる
+                        player.set_is_reset(True) 
                         break
 
-                    # 通常の着地処理
                     rect.bottom = plat_rect.top
                     player.set_vel_y(0)
                     player.set_on_ground(True)
                     
-                    # ギミック：氷床
                     if plat.get_type() == "ice":
                         player.set_on_ice(True)
                     else:
@@ -203,7 +196,7 @@ def update_player(player, keys, platforms, goal_block):
 def main():
     pygame.init()
     screen = pygame.display.set_mode((WIDTH, HEIGHT))
-    pygame.display.set_caption("Jump King - Gimmick Floors")
+    pygame.display.set_caption("Jump King - Colored Gimmicks")
     clock = pygame.time.Clock()
     font = pygame.font.SysFont(None, 36)
     large_font = pygame.font.SysFont(None, 72)
@@ -211,8 +204,7 @@ def main():
     player = Player()
     platforms = []
     
-    # --- 10層分のマップ生成（階層ごとにギミックを割り当て） ---
-    platforms.append(Platform(0, HEIGHT - 40, WIDTH, 40, COLOR_NORMAL, "normal")) # スタート床
+    platforms.append(Platform(0, HEIGHT - 40, WIDTH, 40, COLOR_NORMAL, "normal")) 
 
     TOTAL_FLOORS = 10
     goal_y = (HEIGHT - 40) - (HEIGHT * TOTAL_FLOORS)
@@ -225,7 +217,6 @@ def main():
         floor_plats = []
         plat_y = floor_bottom - 150
         
-        # 1つの階層につき、上に向かってランダムに足場を生成
         while plat_y > floor_top + 50:
             w = random.randint(60, 130)
             x = random.randint(0, WIDTH - w)
@@ -233,27 +224,26 @@ def main():
             gap_y = random.randint(80, 130)
             plat_y -= gap_y
             
-        # --- ギミック床の割り当て ---
-        # 足場が4つ以上ある場合のみ、ランダムな足場を選んでギミックに差し替える
-        if len(floor_plats) >= 4:
-            specials = random.sample(range(len(floor_plats)), 4)
+        if len(floor_plats) >= 2:
+            special_type = random.choice(["fake", "ice", "trampoline"])
             
-            # 1. すり抜ける床（紫）を1つ生成
-            p_fake = floor_plats[specials[0]]
-            floor_plats[specials[0]] = Platform(p_fake.get_rect().x, p_fake.get_rect().y, p_fake.get_rect().width, 20, COLOR_FAKE, "fake")
-            
-            # 2. 滑る床（水色）を1つ生成
-            p_ice = floor_plats[specials[1]]
-            floor_plats[specials[1]] = Platform(p_ice.get_rect().x, p_ice.get_rect().y, p_ice.get_rect().width, 20, COLOR_ICE, "ice")
-            
-            # 3. トランポリン（オレンジ）を1つ生成
-            p_tramp = floor_plats[specials[2]]
-            floor_plats[specials[2]] = Platform(p_tramp.get_rect().x, p_tramp.get_rect().y, p_tramp.get_rect().width, 20, COLOR_TRAMPOLINE, "trampoline")
-            
-            # 4. 最上層(f == 9)のみ、スタートに戻る罠床（赤）を生成
+            # 10階の場合：ランダム特殊床1つ ＋ トラップ床1つ
             if f == TOTAL_FLOORS - 1:
-                p_trap = floor_plats[specials[3]]
-                floor_plats[specials[3]] = Platform(p_trap.get_rect().x, p_trap.get_rect().y, p_trap.get_rect().width, 20, COLOR_TRAP, "trap")
+                specials = random.sample(range(len(floor_plats)), 2)
+                
+                p_spec = floor_plats[specials[0]]
+                # 種類に応じた色（COLOR_MAP[special_type]）を適用
+                floor_plats[specials[0]] = Platform(p_spec.get_rect().x, p_spec.get_rect().y, p_spec.get_rect().width, 20, COLOR_MAP[special_type], special_type)
+                
+                p_trap = floor_plats[specials[1]]
+                # 赤色を適用
+                floor_plats[specials[1]] = Platform(p_trap.get_rect().x, p_trap.get_rect().y, p_trap.get_rect().width, 20, COLOR_TRAP, "trap")
+            
+            # 1〜9階の場合：ランダム特殊床1つ
+            else:
+                special_idx = random.choice(range(len(floor_plats)))
+                p_spec = floor_plats[special_idx]
+                floor_plats[special_idx] = Platform(p_spec.get_rect().x, p_spec.get_rect().y, p_spec.get_rect().width, 20, COLOR_MAP[special_type], special_type)
                 
         platforms.extend(floor_plats)
 
@@ -268,17 +258,14 @@ def main():
 
         keys = pygame.key.get_pressed()
         
-        # 関数呼び出し
         update_player(player, keys, platforms, goal_block)
 
         p_rect = player.get_rect()
 
-        # --- トラップ床で戻された場合のカメラリセット ---
         if player.get_is_reset():
             camera_y = 0
-            player.set_is_reset(False) # フラグを元に戻す
+            player.set_is_reset(False) 
 
-        # --- 通常のカメラ処理 ---
         SCROLL_TOP_MARGIN = 200
         if p_rect.y - camera_y < SCROLL_TOP_MARGIN:
             camera_y = p_rect.y - SCROLL_TOP_MARGIN
@@ -292,36 +279,29 @@ def main():
         if camera_y > 0:
             camera_y = 0
 
-        # --- スコア・階層計算 ---
         current_height = (HEIGHT - 40) - p_rect.bottom
         if current_height > max_height:
             max_height = current_height
             
         current_floor = min((current_height // HEIGHT) + 1, TOTAL_FLOORS)
-        # トラップで戻された時用に、現在高さがマイナスにならないよう調整
         display_floor = max(1, current_floor)
 
-        # --- 描画処理 ---
         screen.fill(BLACK)
 
-        # ゴールの描画
         goal_rect = goal_block.get_rect()
         goal_draw_y = goal_rect.y - camera_y
         if -100 < goal_draw_y < HEIGHT + 100:
             screen.blit(goal_block.get_image(), (goal_rect.x, goal_draw_y))
 
-        # 足場の描画
         for plat in platforms:
             plat_rect = plat.get_rect()
             draw_y = plat_rect.y - camera_y
             if -50 < draw_y < HEIGHT + 50:
                 screen.blit(plat.get_image(), (plat_rect.x, draw_y))
 
-        # プレイヤーの描画
         player_draw_y = p_rect.y - camera_y
         screen.blit(player.get_image(), (p_rect.x, player_draw_y))
 
-        # チャージゲージと方向指示器
         if player.get_is_charging() and not player.get_is_clear():
             gauge_width = (player.get_charge_power() / player.get_max_charge()) * 40
             pygame.draw.rect(screen, COLOR_RED_UI, (p_rect.centerx - 20, player_draw_y - 15, gauge_width, 8))
@@ -329,11 +309,9 @@ def main():
         arrow_x = p_rect.right + 5 if player.get_direction() == 1 else p_rect.left - 10
         pygame.draw.rect(screen, WHITE, (arrow_x, player_draw_y + 15, 5, 5))
 
-        # 情報表示
         ui_text = font.render(f"Floor: {display_floor} / {TOTAL_FLOORS}   Max: {max_height // 10}m", True, WHITE)
         screen.blit(ui_text, (10, 10))
 
-        # ゴール演出
         if player.get_is_clear():
             clear_text = large_font.render("CLEAR!!", True, GOLD)
             text_rect = clear_text.get_rect(center=(WIDTH // 2, HEIGHT // 2 - 50))
