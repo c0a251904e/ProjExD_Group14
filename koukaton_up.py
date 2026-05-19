@@ -112,7 +112,7 @@ def update_player(player, keys, platforms, goal_block):
 
     rect = player.get_rect()
 
-    # 座標の更新 (X軸) と壁の跳ね返り
+    # X軸方向の移動と、足場の【左右】の当たり判定
     rect.x += player.get_vel_x()
     if rect.left < 0:
         rect.left = 0
@@ -123,7 +123,20 @@ def update_player(player, keys, platforms, goal_block):
         player.set_vel_x(player.get_vel_x() * -0.5)
         player.set_direction(-1)
 
-    # 座標の更新 (Y軸)
+    # 追加：足場の左右側面との衝突をチェック
+    for plat in platforms:
+        plat_rect = plat.get_rect()
+        if rect.colliderect(plat_rect):
+            if player.get_vel_x() > 0:  # 右移動中に衝突
+                rect.right = plat_rect.left
+                player.set_vel_x(player.get_vel_x() * -0.5)
+                player.set_direction(-1)
+            elif player.get_vel_x() < 0:  # 左移動中に衝突
+                rect.left = plat_rect.right
+                player.set_vel_x(player.get_vel_x() * -0.5)
+                player.set_direction(1)
+
+    # Y軸方向の移動
     rect.y += int(player.get_vel_y())
 
     # --- 3. ゴール（天井）との当たり判定 ---
@@ -137,16 +150,23 @@ def update_player(player, keys, platforms, goal_block):
 
     # --- 4. 足場との当たり判定 ---
     player.set_on_ground(False)
-    if player.get_vel_y() > 0:
-        for plat in platforms:
-            plat_rect = plat.get_rect()
-            if rect.colliderect(plat_rect):
+    
+    for plat in platforms:
+        plat_rect = plat.get_rect()
+        if rect.colliderect(plat_rect):
+            # もともとの上面判定（落下中の着地判定）
+            if player.get_vel_y() > 0:
                 if rect.bottom <= plat_rect.top + player.get_vel_y() + 1:
                     rect.bottom = plat_rect.top
                     player.set_vel_y(0)
                     player.set_vel_x(0)
                     player.set_on_ground(True)
                     break
+            # 追加：上昇中に足場の【下側（天井部分）】に頭をぶつけた判定
+            elif player.get_vel_y() < 0:
+                rect.top = plat_rect.bottom
+                player.set_vel_y(0)  # 上昇を止める
+                break
 
 
 # ==========================================
