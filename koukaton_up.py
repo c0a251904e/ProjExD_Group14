@@ -162,10 +162,10 @@ def update_player(player, keys, platforms, goal_block, jump_sound):
             
             if keys[pygame.K_LEFT] or keys[pygame.K_a]:
                 player.set_direction(-1)
-                player._image = pygame.transform.flip(player.image_original, True, False)
+                player._image = player.image_original
             if keys[pygame.K_RIGHT] or keys[pygame.K_d]:
                 player.set_direction(1)
-                player._image = player.image_original
+                player._image = pygame.transform.flip(player.image_original, True, False)
 
             if keys[pygame.K_SPACE]:
                 player.set_is_charging(True)
