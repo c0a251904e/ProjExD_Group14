@@ -184,7 +184,6 @@ def draw_ui(screen, font, player, current_floor, total_floors, current_height, m
 
 
 
-
 # ==========================================
 # 3. メインループ
 # ==========================================
