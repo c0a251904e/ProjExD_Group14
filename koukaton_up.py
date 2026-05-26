@@ -162,10 +162,10 @@ def update_player(player, keys, platforms, goal_block, jump_sound):
             
             if keys[pygame.K_LEFT] or keys[pygame.K_a]:
                 player.set_direction(-1)
-                player._image = player.image_original
+                player._image = pygame.transform.flip(player.image_original, True, False)
             if keys[pygame.K_RIGHT] or keys[pygame.K_d]:
                 player.set_direction(1)
-                player._image = pygame.transform.flip(player.image_original, True, False)
+                player._image = player.image_original
 
             if keys[pygame.K_SPACE]:
                 player.set_is_charging(True)
@@ -389,10 +389,10 @@ def main():
         
         # Floor 5 (すり抜ける罠 初登場)
         (50, -2550, 100, "normal"),
-        (400, -2600, 100, "fake"),   # 偽物
+        (300, -2600, 100, "fake"),   # 偽物
         (400, -2700, 100, "normal"), # 本物
         (150, -2850, 100, "ice"),
-        (350, -3000, 100, "fake"),
+        (50, -3000, 100, "fake"),
         (350, -3050, 100, "normal"),
         (100, -3200, 100, "normal"),
         
@@ -411,14 +411,17 @@ def main():
         
         # Floor 8 (複合ギミック)
         (450, -4950, 70, "normal"),
-        (200, -5100, 70, "fake"),
+        (50, -5100, 70, "fake"),
         (150, -5200, 70, "normal"),
         (300, -5350, 70, "trap"),
         (50, -5450, 70, "normal"),
-        (400, -5600, 70, "trampoline"),
+        (400, -5600, 70, "trampoline"), # ← 41番目の床
+        
+        # ★ 追加：41番目と42番目の間（左寄り）
+        (80, -5850, 70, "normal"),
         
         # Floor 9 (終盤・かなり狭い)
-        (100, -6050, 70, "normal"),
+        (75, -6050, 70, "normal"),     # ← 42番目の床
         (400, -6200, 70, "ice"),
         (150, -6350, 70, "trap"),
         (200, -6450, 70, "normal"),
@@ -427,7 +430,6 @@ def main():
         (450, -6600, 60, "normal"),
         (250, -6750, 60, "ice"),
         (50, -6900, 60, "trampoline"), # これに乗ればゴールへ一気に飛べる
-        (200, -7200, 100, "fake")      # ゴール直前の目隠し（すり抜ける）
     ]
 
     # 固定データをインスタンス化してリストに追加
@@ -524,7 +526,7 @@ def main():
             sub_rect = sub_text.get_rect(center=(WIDTH // 2, HEIGHT // 2 + 10))
             screen.blit(sub_text, sub_rect)
             
-            # 残り秒数を表示（おまけ）
+            # 残り秒数を表示
             elapsed = pygame.time.get_ticks() - clear_time
             remaining = max(0, 10 - (elapsed // 1000))
             close_text = font.render(f"Closing in {remaining} seconds...", True, LIGHT_BLUE)
